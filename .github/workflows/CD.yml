@@ -1,0 +1,23 @@
+name: CD pipeline
+on:
+  workflow_run:
+    workflows: ["CI pipeline"]
+    types: [completed]
+jobs:
+  Deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Apply Kubernetes files
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+
+      - name: Restart deployment to pull new image
+        run: kubectl rollout restart deployment/weather-classifier
+
+      - name: Wait for rollout to finish
+        run: kubectl rollout status deployment/weather-classifier
