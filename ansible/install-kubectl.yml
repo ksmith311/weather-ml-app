@@ -1,0 +1,26 @@
+---
+- name: Install kubectl
+  hosts: localhost
+  connection: local
+  become: true
+  tasks:
+    - name: Get latest stable kubectl version
+      ansible.builtin.uri:
+        url: https://dl.k8s.io/release/stable.txt
+        return_content: true
+      register: kube_version
+
+    - name: Download kubectl binary
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/{{ kube_version.content | trim }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: "0755"
+
+    - name: Verify kubectl
+      ansible.builtin.command: kubectl version --client
+      register: kubectl_out
+      changed_when: false
+
+    - name: Show kubectl version
+      ansible.builtin.debug:
+        var: kubectl_out.stdout_lines

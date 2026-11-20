@@ -1,0 +1,31 @@
+---
+- name: Deploy weather-ml-app to Kubernetes
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Apply Deployment
+      ansible.builtin.command: kubectl apply -f {{ playbook_dir }}/deployment.yaml
+      register: dep_out
+      changed_when: "'unchanged' not in dep_out.stdout"
+
+    - name: Apply Service
+      ansible.builtin.command: kubectl apply -f {{ playbook_dir }}/service.yaml
+      register: svc_out
+      changed_when: "'unchanged' not in svc_out.stdout"
+
+    - name: Scale deployment to 3 replicas for rolling updates
+      ansible.builtin.command: kubectl scale deployment/weather-ml-app --replicas=3
+      changed_when: false
+
+    - name: Wait for rollout to complete
+      ansible.builtin.command: kubectl rollout status deployment/weather-ml-app --timeout=300s
+      changed_when: false
+
+    - name: Get pods and service
+      ansible.builtin.command: kubectl get pods,svc -o wide
+      register: k8s_out
+      changed_when: false
+
+    - name: Show pods and service
+      ansible.builtin.debug:
+        var: k8s_out.stdout_lines

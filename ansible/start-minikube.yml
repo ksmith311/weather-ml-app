@@ -1,0 +1,30 @@
+---
+- name: Install and start Minikube
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Download Minikube binary
+      become: true
+      ansible.builtin.get_url:
+        url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        dest: /usr/local/bin/minikube
+        mode: "0755"
+
+    - name: Check whether Minikube is already running
+      ansible.builtin.command: minikube status
+      register: mk_status
+      failed_when: false
+      changed_when: false
+
+    - name: Start Minikube with the Docker driver
+      ansible.builtin.command: minikube start --driver=docker
+      when: mk_status.rc != 0
+
+    - name: Get final cluster status
+      ansible.builtin.command: minikube status
+      register: mk_final
+      changed_when: false
+
+    - name: Show cluster status
+      ansible.builtin.debug:
+        var: mk_final.stdout_lines
