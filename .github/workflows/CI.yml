@@ -8,9 +8,6 @@ on:
 env:
   IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/weather-ml-app:v1
 
-defaults:
-  run:
-    working-directory: "Code Files"
 
 jobs:
   build:
