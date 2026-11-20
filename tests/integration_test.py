@@ -23,13 +23,14 @@ class TestModelAppIntegration(unittest.TestCase):
 		}
 
 		response = self.client.post('/', data=form_data)
+		self.assertEqual(response.status_code, 200)
 	
-		# Complete below
 		# Ensure that the result page (response.data) should include a weather prediction
-		
+		self.assertIn(b'The weather is:', response.data)
 	
 		# Ensure that the result page should include a prediction time
-		
+		self.assertIn(b'Prediction time:', response.data)
+		self.assertIn(b'ms', response.data)
 
 		html_text = response.data.decode('utf-8').lower()
 		valid_classes = [
@@ -39,6 +40,7 @@ class TestModelAppIntegration(unittest.TestCase):
 		found = any(weather in html_text for weather in valid_classes)
 		
 		# Ensure that classification is in valid classes, provide an error message if not.
+		self.assertTrue(found, f"Prediction not in valid classes {valid_classes}. Response was:\n{html_text}")
 		
 
 if __name__ == '__main__':
