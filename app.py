@@ -15,7 +15,7 @@ def classify_weather(features):
 	start = time.time()
 	prediction_index = model.predict(features)[0]
 	latency = round((time.time() - start) * 1000, 2) #we are here
-	prediction = weather_classes[1]
+	prediction = weather_classes[int(prediction_index)]
 	
 	return prediction, latency
 
@@ -49,7 +49,7 @@ def home():
 
 		except Exception as e:
 			error_msg = f"Error processing input: {e}"
-			return render_template('form.html', error=error_msg)
+			return render_template('form.html', error=error_msg), 400
 	# GET method: show the input form
 	return render_template('form.html')
 
