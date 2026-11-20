@@ -1,8 +1,17 @@
 name: CI pipeline
+
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/weather-ml-app:v1
+
+defaults:
+  run:
+    working-directory: "Code Files"
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,29 +19,38 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run test_app
-        run: python -m pytest test_app.py
+      - name: Run smoke test
+        run: python -m unittest tests/smoke_test.py -v
 
-      - name: Run test_model
-        run: python -m pytest test_model.py
+      - name: Run unit test
+        run: python -m unittest tests/unit_test.py -v
+
+      - name: Run integration test
+        run: python -m unittest tests/integration_test.py -v
 
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/weather-classifier:latest .
+        run: docker build -t $IMAGE .
 
       - name: Test container launches
         run: |
-          docker run -d --name test-container -p 5000:5000 ${{ secrets.DOCKERHUB_USERNAME }}/weather-classifier:latest
+          docker run -d --name test-container -p 5000:5000 $IMAGE
           sleep 10
           docker exec test-container python --version
+          docker ps
           docker rm -f test-container
 
       - name: Login to DockerHub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Push Docker image
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/weather-classifier:latest
+        run: docker push $IMAGE
